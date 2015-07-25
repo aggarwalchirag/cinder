@@ -32,6 +32,7 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
              base.CinderObjectDictCompat):
     # Version 1.0: Initial version
     VERSION = '1.0'
+    OPTIONAL_FIELDS = ()
 
     fields = {
         'id': fields.UUIDField(),
@@ -101,6 +102,8 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
     @staticmethod
     def _from_db_object(context, volume, db_volume):
         for name, field in volume.fields.items():
+            if name in Volume.OPTIONAL_FIELDS:
+                continue
             value = db_volume[name]
             if isinstance(field, fields.IntegerField):
                 value = value or 0
