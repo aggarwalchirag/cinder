@@ -40,7 +40,6 @@ from oslo_config import cfg
 from oslo_db import concurrency as db_concurrency
 from oslo_db import options as db_options
 
-from cinder.i18n import _
 
 db_opts = [
     cfg.BoolOpt('enable_new_services',
@@ -267,6 +266,9 @@ def volume_attachment_get_by_instance_uuid(context, volume_id, instance_uuid):
                                                        instance_uuid)
 
 
+def volume_has_attachments_filter():
+    return IMPL.volume_has_attachments_filter()
+
 ####################
 
 
@@ -392,10 +394,11 @@ def volume_admin_metadata_delete(context, volume_id, key):
     return IMPL.volume_admin_metadata_delete(context, volume_id, key)
 
 
-def volume_admin_metadata_update(context, volume_id, metadata, delete):
+def volume_admin_metadata_update(context, volume_id, metadata, delete,
+                                 add=True, update=True):
     """Update metadata if it exists, otherwise create it."""
     return IMPL.volume_admin_metadata_update(context, volume_id, metadata,
-                                             delete)
+                                             delete, add, update)
 
 
 ##################

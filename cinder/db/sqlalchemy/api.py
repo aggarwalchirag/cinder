@@ -39,10 +39,11 @@ import osprofiler.sqlalchemy
 import six
 import sqlalchemy
 from sqlalchemy import MetaData
-from sqlalchemy import or_, case
+from sqlalchemy import or_, and_, case
 from sqlalchemy.orm import joinedload, joinedload_all
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.schema import Table
+from sqlalchemy import sql
 from sqlalchemy.sql.expression import literal_column
 from sqlalchemy.sql.expression import true
 from sqlalchemy.sql import func
@@ -1725,6 +1726,13 @@ def volume_attachment_update(context, attachment_id, values):
         return volume_attachment_ref
 
 
+def volume_has_attachments_filter():
+    return sql.exists().where(
+        and_(models.Volume.id == models.VolumeAttachment.volume_id,
+             models.VolumeAttachment.attach_status != 'detached',
+             ~models.VolumeAttachment.deleted))
+
+
 ####################
 
 def _volume_x_metadata_get_query(context, volume_id, model, session=None):
@@ -1755,7 +1763,8 @@ def _volume_x_metadata_get_item(context, volume_id, key, model, notfound_exec,
 
 
 def _volume_x_metadata_update(context, volume_id, metadata, delete,
-                              model, notfound_exec, session=None):
+                              model, notfound_exec, session=None,
+                              add=True, update=True):
     if not session:
         session = get_session()
 
@@ -1876,11 +1885,11 @@ def _volume_admin_metadata_get(context, volume_id, session=None):
 @require_admin_context
 @require_volume_exists
 def _volume_admin_metadata_update(context, volume_id, metadata, delete,
-                                  session=None):
+                                  session=None, add=True, update=True):
     return _volume_x_metadata_update(context, volume_id, metadata, delete,
                                      models.VolumeAdminMetadata,
                                      exception.VolumeAdminMetadataNotFound,
-                                     session=session)
+                                     session=session, add=add, update=update)
 
 
 @require_admin_context
@@ -1903,8 +1912,10 @@ def volume_admin_metadata_delete(context, volume_id, key):
 @require_admin_context
 @require_volume_exists
 @_retry_on_deadlock
-def volume_admin_metadata_update(context, volume_id, metadata, delete):
-    return _volume_admin_metadata_update(context, volume_id, metadata, delete)
+def volume_admin_metadata_update(context, volume_id, metadata, delete,
+                                 add=True, update=True):
+    return _volume_admin_metadata_update(context, volume_id, metadata, delete,
+                                         add=add, update=update)
 
 
 ###################
